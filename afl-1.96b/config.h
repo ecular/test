@@ -2,20 +2,30 @@
    american fuzzy lop - vaguely configurable bits
    ----------------------------------------------
 
-   Written and maintained by Michal Zalewski <lcamtuf@google.com>
+   Original AFL code written by Michal Zalewski <lcamtuf@google.com>
 
-   Copyright 2013, 2014, 2015 Google Inc. All rights reserved.
+   Windows fork written and maintained by Ivan Fratric <ifratric@google.com>
+
+   Copyright 2016 Google Inc. All Rights Reserved.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at:
+   You may obtain a copy of the License at
 
-     http://www.apache.org/licenses/LICENSE-2.0
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 
  */
 
 #ifndef _HAVE_CONFIG_H
 #define _HAVE_CONFIG_H
+
+#define inline __inline
 
 #include "types.h"
 
@@ -27,11 +37,11 @@
 
 /* Comment out to disable terminal colors: */
 
-#define USE_COLOR
+// #define USE_COLOR
 
 /* Comment out to disable fancy ANSI boxes and use poor man's 7-bit UI: */
 
-#define FANCY_BOXES
+//#define FANCY_BOXES
 
 /* Default timeout for fuzzed code (milliseconds): */
 
@@ -182,7 +192,7 @@
 
 /* UI refresh frequency (Hz): */
 
-#define UI_TARGET_HZ        5
+#define UI_TARGET_HZ        1
 
 /* Fuzzer stats file and plot update intervals (sec): */
 
@@ -203,7 +213,7 @@
 
 /* Uncomment to use simple file names (id_NNNNNN): */
 
-// #define SIMPLE_FILES
+#define SIMPLE_FILES
 
 /* List of interesting values to use in fuzzing. */
 

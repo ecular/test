@@ -2,19 +2,23 @@
    american fuzzy lop - error-checking, memory-zeroing alloc routines
    ------------------------------------------------------------------
 
-   Written and maintained by Michal Zalewski <lcamtuf@google.com>
+   Original AFL code written by Michal Zalewski <lcamtuf@google.com>
 
-   Copyright 2013, 2014, 2015 Google Inc. All rights reserved.
+   Windows fork written and maintained by Ivan Fratric <ifratric@google.com>
+
+   Copyright 2016 Google Inc. All Rights Reserved.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at:
+   You may obtain a copy of the License at
 
-     http://www.apache.org/licenses/LICENSE-2.0
+       http://www.apache.org/licenses/LICENSE-2.0
 
-   This allocator is not designed to resist malicious attackers (the canaries
-   are small and predictable), but provides a robust and portable way to detect
-   use-after-free, off-by-one writes, stale pointers, and so on.
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 
  */
 
@@ -30,8 +34,8 @@
 #include "debug.h"
 
 /* User-facing macro to sprintf() to a dynamically allocated buffer. */
-
-#define alloc_printf(_str...) ({ \
+/*
+#define alloc_printf(_str, ...) ({ \
     u8* _tmp; \
     s32 _len = snprintf(NULL, 0, _str); \
     if (_len < 0) FATAL("Whoa, snprintf() fails?!"); \
@@ -39,6 +43,7 @@
     snprintf((char*)_tmp, _len + 1, _str); \
     _tmp; \
   })
+*/
 
 /* Macro to enforce allocation limits as a last-resort defense against
    integer overflows. */
@@ -100,7 +105,7 @@
 
 static inline void* DFL_ck_alloc_nozero(u32 size) {
 
-  void* ret;
+  char* ret;
 
   if (!size) return NULL;
 
@@ -136,7 +141,7 @@ static inline void* DFL_ck_alloc(u32 size) {
 /* Free memory, checking for double free and corrupted heap. When DEBUG_BUILD
    is set, the old memory will be also clobbered with 0xFF. */
 
-static inline void DFL_ck_free(void* mem) {
+static inline void DFL_ck_free(char* mem) {
 
   if (!mem) return;
 
@@ -160,9 +165,9 @@ static inline void DFL_ck_free(void* mem) {
    With DEBUG_BUILD, the buffer is always reallocated to a new addresses and the
    old memory is clobbered with 0xFF. */
 
-static inline void* DFL_ck_realloc(void* orig, u32 size) {
+static inline void* DFL_ck_realloc(char* orig, u32 size) {
 
-  void* ret;
+  char* ret;
   u32   old_size = 0;
 
   if (!size) {
@@ -257,7 +262,7 @@ static inline void* DFL_ck_realloc_block(void* orig, u32 size) {
 
 static inline u8* DFL_ck_strdup(u8* str) {
 
-  void* ret;
+  char* ret;
   u32   size;
 
   if (!str) return NULL;
@@ -284,7 +289,7 @@ static inline u8* DFL_ck_strdup(u8* str) {
 
 static inline void* DFL_ck_memdup(void* mem, u32 size) {
 
-  void* ret;
+  char* ret;
 
   if (!mem || !size) return NULL;
 

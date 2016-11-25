@@ -2,15 +2,23 @@
    american fuzzy lop - debug / error handling macros
    --------------------------------------------------
 
-   Written and maintained by Michal Zalewski <lcamtuf@google.com>
+   Original AFL code written by Michal Zalewski <lcamtuf@google.com>
 
-   Copyright 2013, 2014, 2015 Google Inc. All rights reserved.
+   Windows fork written and maintained by Ivan Fratric <ifratric@google.com>
+
+   Copyright 2016 Google Inc. All Rights Reserved.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at:
+   You may obtain a copy of the License at
 
-     http://www.apache.org/licenses/LICENSE-2.0
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 
  */
 
@@ -114,11 +122,17 @@
  * Misc terminal codes *
  ***********************/
 
-#define TERM_HOME     "\x1b[H"
-#define TERM_CLEAR    TERM_HOME "\x1b[2J"
-#define cEOL          "\x1b[0K"
-#define CURSOR_HIDE   "\x1b[?25l"
-#define CURSOR_SHOW   "\x1b[?25h"
+//#define TERM_HOME     "\x1b[H"
+//#define TERM_CLEAR    TERM_HOME "\x1b[2J"
+//#define cEOL          "\x1b[0K"
+//#define CURSOR_HIDE   "\x1b[?25l"
+//#define CURSOR_SHOW   "\x1b[?25h"
+
+#define TERM_HOME     ""
+#define TERM_CLEAR    ""
+#define cEOL          ""
+#define CURSOR_HIDE   ""
+#define CURSOR_SHOW   ""
 
 /************************
  * Debug & error macros *
@@ -127,43 +141,43 @@
 /* Just print stuff to the appropriate stream. */
 
 #ifdef MESSAGES_TO_STDOUT
-#  define SAYF(x...)    printf(x)
+#  define SAYF(...)    printf(__VA_ARGS__)
 #else 
-#  define SAYF(x...)    fprintf(stderr, x)
+#  define SAYF(...)    fprintf(stderr, __VA_ARGS__)
 #endif /* ^MESSAGES_TO_STDOUT */
 
 /* Show a prefixed warning. */
 
-#define WARNF(x...) do { \
-    SAYF(cYEL "[!] " cBRI "WARNING: " cRST x); \
+#define WARNF(...) do { \
+    SAYF(cYEL "[!] " cBRI "WARNING: " cRST __VA_ARGS__); \
     SAYF(cRST "\n"); \
   } while (0)
 
 /* Show a prefixed "doing something" message. */
 
-#define ACTF(x...) do { \
-    SAYF(cLBL "[*] " cRST x); \
+#define ACTF(...) do { \
+    SAYF(cLBL "[*] " cRST __VA_ARGS__); \
     SAYF(cRST "\n"); \
   } while (0)
 
 /* Show a prefixed "success" message. */
 
-#define OKF(x...) do { \
-    SAYF(cLGN "[+] " cRST x); \
+#define OKF(...) do { \
+    SAYF(cLGN "[+] " cRST __VA_ARGS__); \
     SAYF(cRST "\n"); \
   } while (0)
 
 /* Show a prefixed fatal error message (not used in afl). */
 
-#define BADF(x...) do { \
-    SAYF(cLRD "\n[-] " cRST x); \
+#define BADF(...) do { \
+    SAYF(cLRD "\n[-] " cRST __VA_ARGS__); \
     SAYF(cRST "\n"); \
   } while (0)
 
 /* Die with a verbose non-OS fatal error message. */
 
-#define FATAL(x...) do { \
-    SAYF(bSTOP RESET_G1 CURSOR_SHOW cLRD "\n[-] PROGRAM ABORT : " cBRI x); \
+#define FATAL(...) do { \
+    SAYF(bSTOP RESET_G1 CURSOR_SHOW cLRD "\n[-] PROGRAM ABORT : " cBRI __VA_ARGS__); \
     SAYF(cLRD "\n         Location : " cRST "%s(), %s:%u\n\n", \
          __FUNCTION__, __FILE__, __LINE__); \
     exit(1); \
@@ -171,8 +185,8 @@
 
 /* Die by calling abort() to provide a core dump. */
 
-#define ABORT(x...) do { \
-    SAYF(bSTOP RESET_G1 CURSOR_SHOW cLRD "\n[-] PROGRAM ABORT : " cBRI x); \
+#define ABORT(...) do { \
+    SAYF(bSTOP RESET_G1 CURSOR_SHOW cLRD "\n[-] PROGRAM ABORT : " cBRI __VA_ARGS__); \
     SAYF(cLRD "\n    Stop location : " cRST "%s(), %s:%u\n\n", \
          __FUNCTION__, __FILE__, __LINE__); \
     abort(); \
@@ -180,9 +194,9 @@
 
 /* Die while also including the output of perror(). */
 
-#define PFATAL(x...) do { \
+#define PFATAL(...) do { \
     fflush(stdout); \
-    SAYF(bSTOP RESET_G1 CURSOR_SHOW cLRD "\n[-]  SYSTEM ERROR : " cBRI x); \
+    SAYF(bSTOP RESET_G1 CURSOR_SHOW cLRD "\n[-]  SYSTEM ERROR : " cBRI __VA_ARGS__); \
     SAYF(cLRD "\n    Stop location : " cRST "%s(), %s:%u\n", \
          __FUNCTION__, __FILE__, __LINE__); \
     SAYF(cLRD "       OS message : " cRST "%s\n", strerror(errno)); \
@@ -192,8 +206,8 @@
 /* Die with FAULT() or PFAULT() depending on the value of res (used to
    interpret different failure modes for read(), write(), etc). */
 
-#define RPFATAL(res, x...) do { \
-    if (res < 0) PFATAL(x); else FATAL(x); \
+#define RPFATAL(res, ...) do { \
+    if (res < 0) PFATAL(__VA_ARGS__); else FATAL(__VA_ARGS__); \
   } while (0)
 
 /* Error-checking versions of read() and write() that call RPFATAL() as
@@ -201,13 +215,13 @@
 
 #define ck_write(fd, buf, len, fn) do { \
     u32 _len = (len); \
-    s32 _res = write(fd, buf, _len); \
+    s32 _res = _write(fd, buf, _len); \
     if (_res != _len) RPFATAL(_res, "Short write to %s", fn); \
   } while (0)
 
 #define ck_read(fd, buf, len, fn) do { \
     u32 _len = (len); \
-    s32 _res = read(fd, buf, _len); \
+    s32 _res = _read(fd, buf, _len); \
     if (_res != _len) RPFATAL(_res, "Short read from %s", fn); \
   } while (0)
 
